@@ -1,0 +1,3 @@
+Fri Jul 19 1356: 
+  s071824c.m aligns trial averages very well. s071824_1.m which is further along in the process and uses
+  the transforms in s071824c.m does not align the time and trial averages well, look into it again. 
