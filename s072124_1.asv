@@ -1,0 +1,363 @@
+% align_ImgSet.m > align_to_maximize_overlap > extract_best_transformation.m
+% trans_att_in > I_aligned > align_ImgSet(I, ref_img) > 
+%                        I = mean(Ke, 4) > Ke = Kon_2{element}
+element = 4;
+
+%% Q1 What does the mean across time look like for Ke trial = 7?
+Ke = Kon_2{element};
+
+tr = 7;
+I = nanmean(Ke(:, :, tr, :), 4);
+figure,
+subplot(1, 2, 1)
+imagesc(I)
+axis off
+title('Kon 2')
+
+% Does it look like trans_att_in(:, :, tr)?
+x = trans_att_in{element, 2}(:, :, tr);
+x(x == 0) = nan;
+subplot(1, 2, 2)
+imagesc(x)
+axis off
+title('trans att in')
+
+%% Q2 What does their superposition and correlation look like?
+y = I + x;
+figure, 
+subplot(1, 2, 1)
+imagesc(y)
+title('Superposition of K _img and translated K_img')
+axis off
+
+subplot(1, 2, 2)
+scatter(x(:), I(:))
+title('Correlation')
+xlabel('x')
+ylabel('I shift')
+
+%%
+x_shift(x_shift == 0) = nan;
+y = I + x_shift;
+imagesc(y)
+scatter(x(:), I(:))
+
+%% Q3 If we translate I =  nanmean(Ke(:, :, tr, :), 4) = Kon_2{element}
+% using its hypothesized t_form will we produce x = trans_att_in{element, 2}(:, :, tr);
+tform =  trans_att_in{element, 1}(tr);
+I_shift = imwarp(I, tform, 'OutputView', outputView);
+
+% figure
+% imagesc(I_shift)
+
+x = trans_att_in{element, 2}(:, :, tr);
+x(x == 0) = nan;
+
+I_shift(I_shift == 0) = nan;
+figure
+subplot(1, 2, 1)
+imagesc(I_shift)
+axis off
+
+subplot(1, 2, 2)
+scatter(x(:), I_shift(:))
+xlabel('x')
+ylabel('I shift')
+title('Correlation')
+
+%% Q4 How much correlation degradation with .5 horizontal translation of same image
+translation_amount = [0, 1.5]; % Right by 10 pixels, no vertical shift
+x(isnan(x)) = 0;
+xx = imtranslate(x, translation_amount);
+xx(xx == 0) = nan;
+x(x == 0) = nan;
+
+figure
+subplot(1, 2, 1)
+imagesc(x + xx)
+axis off
+
+subplot(1, 2, 2)
+scatter(x(:), xx(:))
+xlabel('x')
+ylabel('I shift')
+title('Correlation')
+
+%% Q5 Can we reproduce I_shift without I = nanmean(Ke(:, :, tr, :), 4)?
+time = 5;
+ft = Ke(:, :, tr, time); % 316x316
+ft_t = imwarp(ft, tform, 'OutputView', outputView); 
+
+figure, 
+subplot(1, 2, 1)
+imagesc(ft)
+title(['ft, time: ', num2str(time)])
+axis off
+
+subplot(1, 2, 2)
+imagesc(ft_t)
+title(['ft_t, time: ', num2str(time)])
+axis off
+
+%%
+x = trans_att_in{element, 2}(:, :, tr);
+x(x == 0) = nan;
+
+for time = 1 : 31
+    ft = Ke(:, :, tr, time); % 316x316
+    ft_t(:, :, time) = imwarp(ft, tform, 'OutputView', outputView); 
+end
+Ft_t = nanmean(ft_t, 3);
+Ft_t(Ft_t == 0) = nan;
+figure, 
+subplot(1, 3, 1)
+imagesc(x)
+axis off
+title('X')
+
+subplot(1, 3, 2)
+imagesc(Ft_t)
+axis off
+title('Ft_t')
+
+subplot(1, 3, 3)
+scatter(x(:), Ft_t(:))
+xlabel('x')
+ylabel('Ft_t')
+title('X')
+
+%% Q6: this was done for one trial, do the above for all trials
+element = 18;
+for tr = 1 : size(Kon_2{element}, 3)
+    tform =  trans_att_in{element, 1}(tr);
+        for time = 1 : 31
+            ft = Ke(:, :, tr, time); % 316x316
+            ft_t(:, :, time) = imwarp(ft, tform, 'OutputView', outputView); 
+        end
+%     Ft_t = nanmean(ft_t, 3);
+%     Ft_t(Ft_t == 0) = nan;
+    FTT(:, :, tr, :) = ft_t;
+    tr
+end
+
+%% 
+X = nanmean(FTT, 4);
+x = trans_att_in{element, 2};
+
+mX = nanmean(X, 3);
+mx = nanmean(x, 3);
+mx(mx == 0) = nan;
+mX(mX == 0) = nan;
+
+figure, 
+subplot(1, 3, 1)
+imagesc(mx)
+axis off
+title('mx')
+
+subplot(1, 3, 2)
+imagesc(mX)
+axis off
+title('mX')
+
+subplot(1, 3, 3)
+scatter(mx(:), mX(:))
+xlabel('mx')
+ylabel('mX')
+
+
+
+%% Checking individual trials. Issue, some trials are correlated some are not
+tr = 18;
+a = nanmean(FTT(:, :, tr, :), 4);
+b = trans_att_in{element, 2}(:, :, tr);
+a(isnan(a)) = 0;
+b(isnan(b)) = 0;
+corr(a(:), b(:))
+figure, scatter(a(:), b(:))
+
+%% Eliminate and record those trials which are not well correlated
+notcorr_list = [];
+
+figure, 
+hold all
+for tr = 1 : 195
+a = nanmean(FTT(:, :, tr, :), 4);
+b = trans_att_in{element, 2}(:, :, tr);
+scatter(a(:), b(:))
+a(isnan(a)) = 0;
+b(isnan(b)) = 0;
+if  corr(a(:), b(:)) < .99999
+notcorr_list = [notcorr_list; tr];
+end
+tr
+end
+
+A = [];
+
+figure;
+hold all;
+k = 1;
+for tr = 1:195
+    if ismember(tr, notcorr_list)
+        continue;
+    else
+        a = nanmean(FTT(:, :, tr, :), 4);
+        b = trans_att_in{element, 2}(:, :, tr);
+        A(:, :, k) = a;
+        scatter(a(:), b(:));
+        k = k + 1;
+    end
+    tr
+end
+
+%%
+figure, 
+for j = 1 : length(A)
+    
+scatter(a(:), b(:));
+end
+
+%%
+mA = nanmean(A, 3);
+mx = nanmean(trans_att_in{element, 2}, 3);
+% mA(mA == 0) = nan;
+figure, 
+subplot(1, 2, 1)
+imagesc(mA)
+
+subplot(1, 2, 2)
+imagesc(mx)
+
+figure, 
+scatter(mA(:), mx(:))
+
+%%
+a = Xclean(:, :, 3);
+b = Xclean(:, :, 40);
+
+a(isnan(a)) = 0;
+b(isnan(b)) = 0;
+corr2(a, b)
+
+%%
+A = a; B = b;
+% Define the ranges for translations and rotations
+x_range = -20:1:20; % range for x translation
+y_range = -20:1:20; % range for y translation
+theta_range = -3:1:3; % range for rotation angle in degrees
+
+% Initialize arrays to store results
+correlations = [];
+shifts = [];
+
+% Iterate over the specified ranges of translations and rotations
+disp('Calculating correlations for different transformations...');
+for dx = x_range
+    for dy = y_range
+        for theta = theta_range
+            % Apply the transformation
+            tform = affine2d([cosd(theta), -sind(theta), 0;
+                              sind(theta), cosd(theta), 0;
+                              dx, dy, 1]);
+            B_transformed = imwarp(B, tform, 'OutputView', imref2d(size(A)));
+
+            % Calculate the correlation
+            corr_value = corr2(A, B_transformed);
+
+            % Record the correlation and the transformation parameters
+            correlations(end+1) = corr_value;
+            shifts(end+1, :) = [dx, dy, theta];
+        end
+    end
+    dx
+end
+
+% Find the maximum correlation and the corresponding transformation
+[max_corr, max_idx] = max(correlations);
+best_shift = shifts(max_idx, :);
+
+disp('Optimization complete.');
+disp(['Maximum correlation: ', num2str(max_corr)]);
+disp(['Best x translation: ', num2str(best_shift(1))]);
+disp(['Best y translation: ', num2str(best_shift(2))]);
+disp(['Best rotation angle: ', num2str(best_shift(3))]);
+
+% Apply the best transformation
+disp('Applying the best transformation...');
+best_tform = affine2d([cosd(best_shift(3)), -sind(best_shift(3)), 0;
+                       sind(best_shift(3)), cosd(best_shift(3)), 0;
+                       best_shift(1), best_shift(2), 1]);
+B_aligned = imwarp(B, best_tform, 'OutputView', imref2d(size(A)));
+
+% Display the aligned image
+disp('Displaying the aligned image...');
+figure;
+imshowpair(A, B_aligned, 'montage');
+title('Aligned Image B with Original Image A');
+
+%%
+
+a = Xclean(:, :, 3);
+b = Xclean(:, :, 40);
+
+a(isnan(a)) = 0;
+b(isnan(b)) = 0;
+corr2(a, b)
+
+%%
+A = a; B = b;
+% Define the ranges for translations and rotations
+x_range = -20:1:20; % range for x translation
+y_range = -20:1:20; % range for y translation
+theta_range = -3:1:3; % range for rotation angle in degrees
+
+for k = 1 : 10
+    b = Xclean(:, :, k);
+    b(isnan(b)) = 0;
+B = b;
+% Initialize arrays to store results
+correlations = [];
+shifts = [];
+
+% Iterate over the specified ranges of translations and rotations
+disp('Calculating correlations for different transformations...');
+    for dx = x_range
+        for dy = y_range
+            for theta = theta_range
+                % Apply the transformation
+                tform = affine2d([cosd(theta), -sind(theta), 0;
+                                  sind(theta), cosd(theta), 0;
+                                  dx, dy, 1]);
+                B_transformed = imwarp(B, tform, 'OutputView', imref2d(size(A)));
+    
+                % Calculate the correlation
+                corr_value = corr2(A, B_transformed);
+    
+                % Record the correlation and the transformation parameters
+                correlations(end+1) = corr_value;
+                shifts(end+1, :) = [dx, dy, theta];
+            end
+        end
+  
+    end
+
+
+% Find the maximum correlation and the corresponding transformation
+[max_corr, max_idx] = max(correlations);
+best_shift = shifts(max_idx, :);
+
+best_tform = affine2d([cosd(best_shift(3)), -sind(best_shift(3)), 0;
+                       sind(best_shift(3)), cosd(best_shift(3)), 0;
+                       best_shift(1), best_shift(2), 1]);
+B_aligned(:, :, k) = imwarp(B, best_tform, 'OutputView', imref2d(size(A)));
+k
+end
+% Display the aligned image
+disp('Displaying the aligned image...');
+figure;
+imshowpair(A, B_aligned, 'montage');
+title('Aligned Image B with Original Image A');
+
+%%
+zz = nanmean(B_aligned, 3);

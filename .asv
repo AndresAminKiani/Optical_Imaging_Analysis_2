@@ -33,12 +33,8 @@ Sun Jul 21 1403:
                  Q5: Can we do the same without I = nanmean(Ke(:, :, tr, :), 4)? Produce a series of
                         realigned frames using the same tform then average then do we reproduce I_shift? 
 
-                        The answer is yes. This was done for 1 trial. 
-
-                Q6: Can we do this for all trials? 
-
-                        There are some trials that are not correlated. 
-
+                        The answer is yes. However there are some trials that are not correlated. 
+                        Which are those?
 
 
                                                                                           

@@ -14,11 +14,11 @@ for n = 1 : 9
     % imwarp(b, best_tform, 'OutputView', imref2d(size(a)));
     % I_aligned - 316x316x207
     % ref_aligned - 207x1
-    [I_aligned, transform_info] = align_ImgSet(I, ref_img); 
+    [I_aligned, ref_aligned] = align_ImgSet(I, ref_img); 
     
     % Img = nanmean(I_aligned, 3);
     % figure, imagesc(Img)
-    trans_att_in{   n, 1  } = transform_info;
+    trans_att_in{   n, 1  } = ref_aligned;
     trans_att_in{   n, 2  } = I_aligned;
     n
 end
@@ -27,19 +27,17 @@ trans_att_out = cell(9, 2);
 time_windows = [2 : 31];
 
 for n = 10 : 18
-    Ke = X{    n   }; % 316 316 139 32
-    I = nanmean(Ke(:, :, :, time_windows), 4);
-    
-    % imwarp(b, best_tform, 'OutputView', imref2d(size(a)));
-    % I_aligned - 316x316x207
-    % ref_aligned - 207x1
-    [I_aligned, transform_info] = align_ImgSet(I, ref_img);
-    
-    % Img = nanmean(I_aligned, 3);
-    % figure, imagesc(Img)
-    trans_att_out{   n - 9, 1  } = transform_info;
-    trans_att_out{   n - 9, 2  } = I_aligned;
-    n
+Ke = X{    n   }; % 316 316 139 32
+I = nanmean(Ke(:, :, :, time_windows), 4);
+
+% imwarp(b, best_tform, 'OutputView', imref2d(size(a)));
+[I_aligned, ref_aligned] = align_ImgSet(I, ref_img);
+
+% Img = nanmean(I_aligned, 3);
+% figure, imagesc(Img)
+trans_att_out{   n - 9, 1  } = ref_aligned;
+trans_att_out{   n - 9, 2  } = I_aligned;
+n
 end
 
 %%
