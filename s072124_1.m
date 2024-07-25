@@ -246,7 +246,7 @@ figure, imagesc(c)
 %%
 figure, 
 subplot(1, 2, 1)
-imagesc(imgaussfilt(A(:, :, 1), 5))
+imagesc(imgaussfilt(A(:, :, 1), 3))
 
 subplot(1, 2, 2)
-imagesc(imgaussfilt(A(:, :, 4), 5))
+imagesc(imgaussfilt(A(:, :, 159), 3))

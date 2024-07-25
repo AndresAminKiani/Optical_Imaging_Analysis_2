@@ -1,8 +1,8 @@
 function [best_transformed_bb, best_tform] = align_to_maximize_overlap(a, b)
 
 % Compute binary masks based on standard deviation
-aa = a > nanstd(a(:));
-bb = b > nanstd(b(:));
+aa = a > 2*nanstd(a(:));
+bb = b > 2*nanstd(b(:));
 
 % Define the parameters for translation and rotation
 x_translations = [-10, 0, 10]; % Example x translations
