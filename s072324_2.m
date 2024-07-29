@@ -4,7 +4,7 @@ cd ~/matlab/OpticalImagingProject/VersionControlled
 
 %%
 I = off_raw.I;
-T = off_raw.T;
+T = off_raw.T;c
 Img = I(:, :, 1);
 
 %%
@@ -47,13 +47,15 @@ sgtitle('I(:, :, index)')
 % end
 % sgtitle('I(:, :, index)')
 % colorbar
-
+% k = 1;
+k = 1;
 figure, 
 for j = 1 : 16
     Img = I(:, :, random_integers(j));
     subplot(4, 4, j)
     try 
-        extractVein_0(Img)
+        x(:, :, k) = extractVein_1(Img);
+        k = k + 1;
         title(['Index: ', num2str(random_integers(j))])
     catch ME
         continue
@@ -61,6 +63,10 @@ for j = 1 : 16
 
 end
 sgtitle('I(:, :, index)')
+
+%%
+figure, 
+imagesc(nanmean(x, 3))
 
 %%
 Img = I(:, :, 52505) + I(:, :, 63512) - I(:, :, 73522) ;
